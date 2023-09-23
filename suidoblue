@@ -1,0 +1,27 @@
+#!/bin/python3
+
+import os, subprocess
+
+bins = ['awk', 'bash', 'busybox', 'capsh', 'choom', 'cpulimit', 'csh', 'dash', 'ash', 'aa-exec', 'csvtool', 'debugfs', 'distcc', 'docker', 'ed', 'elvish', 'cpio', 'emacs', 'env', 'expect', 'find', 'fish', 'flock', 'gawk', 'gdb', 'genie', 'gimp', 'gtester', 'hping3', 'ionice', 'ispell', 'jjs', 'jrunscript', 'julia', 'ksh', 'ld.so', 'less', 'logsave', 'lua', 'make', 'mawk', 'more', 'msgfilter', 'multitime', 'nawk', 'ncftp', 'nice', 'nmap', 'node', 'nohup', 'openvpn', 'perf', 'perl', 'pexec', 'pg', 'php', 'python', 'rc', 'rlwrap', 'rsync', 'rtorrent', 'run-parts', 'rview', 'rvim', 'sash', 'scanmem', 'sed', 'setarch', 'setlock', 'softlimit', 'sqlite3', 'ssh-agent', 'sshpass', 'start-stop-daemon', 'stdbuf', 'strace', 'taskset', 'tclsh', 'time', 'timeout', 'unshare', 'vagrant', 'view', 'vim', 'vimdiff', 'watch', 'wget', 'xargs', 'xdotool', 'yash', 'zsh']
+
+def green(skk):
+    print("\033[92m{}\033[00m".format(skk))
+
+def red(skk):
+    print("\033[31m{}\033[00m".format(skk))
+
+if 'SUDO_UID' in os.environ.keys():
+    suids = subprocess.run(["find","/usr/bin","/usr/sbin","/opt", "/home/","-type","f","-perm","-4000"], stdout=subprocess.PIPE,text=True)
+
+    suids = suids.stdout.split()
+
+    suids = [x for x in suids if x.split('/')[-1] in bins]
+
+    for suid in suids:
+        try:
+            os.system("sudo chmod -s " + suid)
+            green(suid.split()[-1] + " permissions changed \n")
+        except:
+            print(suid.split()[-1] + "Permissions not changed \n")
+else:
+    print("Script requires sudo permissions...Aborting")
