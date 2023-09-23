@@ -25,3 +25,5 @@ if 'SUDO_UID' in os.environ.keys():
             print(suid.split()[-1] + "Permissions not changed \n")
 else:
     print("Script requires sudo permissions...Aborting")
+
+
