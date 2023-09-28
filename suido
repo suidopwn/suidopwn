@@ -124,8 +124,7 @@ staged = ['debugfs', 'ed', 'hping3', 'less', 'more', 'pg', 'scanmem']
 bins = subprocess.run(["find","/usr/bin","/usr/sbin","/opt", "/home/","-type","f","-perm","-4000"], stdout=subprocess.PIPE,text=True)
 suid = bins.stdout.split()
 suid = [re.sub("\.\d*","",x.split("/")[-1]) for x in suid]
-print(suid)
-input()
+
 #Compares suid list items to items in roots dict, and sorts them on successibility of exploit. 
 possible_vulns = [x for x in suid if x in master.keys()]
 vulns = sorted([x for x in possible_vulns if x in roots])
