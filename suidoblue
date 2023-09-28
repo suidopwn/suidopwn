@@ -1,12 +1,14 @@
 #!/bin/python3
 
-import os, subprocess
+import os, subprocess, re
 
 #List of vulnerable binaries
 
-bins = ['awk', 'bash', 'busybox', 'capsh', 'choom', 'cpulimit', 'csh', 'dash', 'ash', 'aa-exec', 'csvtool', 'debugfs', 'distcc', 'docker', 'ed', 'elvish', 'cpio', 'emacs', 'env', 'expect', 'find', 'fish', 'flock', 'gawk', 'gdb', 'genie', 'gimp', 'gtester', 'hping3', 'ionice', 'ispell', 'jjs', 'jrunscript', 'julia', 'ksh', 'ld.so', 'less', 'logsave', 'lua', 'make', 'mawk', 'more', 'msgfilter', 'multitime', 'nawk', 'ncftp', 'nice', 'nmap', 'node', 'nohup', 'openvpn', 'perf', 'perl', 'pexec', 'pg', 'php', 'python', 'rc', 'rlwrap', 'rsync', 'rtorrent', 'run-parts', 'rview', 'rvim', 'sash', 'scanmem', 'sed', 'setarch', 'setlock', 'softlimit', 'sqlite3', 'ssh-agent', 'sshpass', 'start-stop-daemon', 'stdbuf', 'strace', 'taskset', 'tclsh', 'time', 'timeout', 'unshare', 'vagrant', 'view', 'vim', 'vimdiff', 'watch', 'wget', 'xargs', 'xdotool', 'yash', 'zsh']
+bins = ['awk', 'bash', 'busybox', 'capsh', 'choom', 'cpulimit', 'csh', 'dash', 'ash', 'aa-exec', 'csvtool', 'debugfs', 'distcc', 'docker', 'ed', 'elvish', 'cpio', 'emacs', 'env', 'expect', 'find', 'fish', 'flock', 'gawk', 'gdb', 'genie', 'gimp', 'gtester', 'hping3', 'ionice', 'ispell', 'jjs', 'jrunscript', 'julia', 'ksh', 'ld.so', 'less', 'logsave', 'lua', 'make', 'mawk', 'more', 'msgfilter', 'multitime', 'nawk', 'ncftp', 'nice', 'nmap', 'node', 'nohup', 'openvpn', 'perf', 'perl', 'pexec', 'pg', 'php', 'python', 'python3', 'rc', 'rlwrap', 'rsync', 'rtorrent', 'run-parts', 'rview', 'rvim', 'sash', 'scanmem', 'sed', 'setarch', 'setlock', 'softlimit', 'sqlite3', 'ssh-agent', 'sshpass', 'start-stop-daemon', 'stdbuf', 'strace', 'taskset', 'tclsh', 'time', 'timeout', 'unshare', 'vagrant', 'view', 'vim', 'vimdiff', 'watch', 'wget', 'xargs', 'xdotool', 'yash', 'zsh']
 
 #Color Functions:
+def blue(skk):
+    print("\033[96m{}\033[00m".format(skk))
 
 def green(skk):
     print("\033[92m{}\033[00m".format(skk))
@@ -15,12 +17,13 @@ def red(skk):
     print("\033[31m{}\033[00m".format(skk))
 
 #Checks for sudo/root privileges. Exits if ran as standard user.
-#Collects all SETUID binaries and compares them to the list above. Discards entries not included in the list. 
+#Collects all SETUID binaries and compares them to the list above. Discards entries not included in the list.
 def get_setuids():
     if 'SUDO_UID' in os.environ.keys():
+        print("Found vulnerable SETUID's...\n")
         suids = subprocess.run(["find","/usr/bin","/usr/sbin","/opt", "/home/","-type","f","-perm","-4000"], stdout=subprocess.PIPE,text=True)
         suids = suids.stdout.split()
-        suids = [x for x in suids if x.split('/')[-1] in bins]
+        suids = [x for x in suids if re.sub("\.\d*","",x.split('/')[-1]) in bins]
         return suids
 
     else:
@@ -31,14 +34,13 @@ def get_setuids():
 #Has user select an individual binary or all binaries.
 #Changes permissions of chosen bin(s)
 def main():
-    counter = 1 
+    counter = 1
     suids = get_setuids()
-    print(suids)
     for suid in suids:
-        print(str(counter) + ") " + suid.split('/')[-1])
+        print(str(counter) + ") " + str.title(suid.split('/')[-1]))
         counter += 1
-    print("A) Change All Binaries\n\n")
-    choice = input("Choose binary to remove SUID Bit from: ")
+    print("\n\nA) Change All Binaries\n\n")
+    choice = input("Selection: ")
     if str.lower(choice) != "a" and choice.isnumeric() == True:
         try:
             os.system("sudo chmod -s " + suid)
