@@ -2,13 +2,20 @@
 
 import os, subprocess
 
+#List of vulnerable binaries
+
 bins = ['awk', 'bash', 'busybox', 'capsh', 'choom', 'cpulimit', 'csh', 'dash', 'ash', 'aa-exec', 'csvtool', 'debugfs', 'distcc', 'docker', 'ed', 'elvish', 'cpio', 'emacs', 'env', 'expect', 'find', 'fish', 'flock', 'gawk', 'gdb', 'genie', 'gimp', 'gtester', 'hping3', 'ionice', 'ispell', 'jjs', 'jrunscript', 'julia', 'ksh', 'ld.so', 'less', 'logsave', 'lua', 'make', 'mawk', 'more', 'msgfilter', 'multitime', 'nawk', 'ncftp', 'nice', 'nmap', 'node', 'nohup', 'openvpn', 'perf', 'perl', 'pexec', 'pg', 'php', 'python', 'rc', 'rlwrap', 'rsync', 'rtorrent', 'run-parts', 'rview', 'rvim', 'sash', 'scanmem', 'sed', 'setarch', 'setlock', 'softlimit', 'sqlite3', 'ssh-agent', 'sshpass', 'start-stop-daemon', 'stdbuf', 'strace', 'taskset', 'tclsh', 'time', 'timeout', 'unshare', 'vagrant', 'view', 'vim', 'vimdiff', 'watch', 'wget', 'xargs', 'xdotool', 'yash', 'zsh']
+
+#Color Functions:
 
 def green(skk):
     print("\033[92m{}\033[00m".format(skk))
 
 def red(skk):
     print("\033[31m{}\033[00m".format(skk))
+
+#Checks for sudo/root privileges. Exits if ran as standard user.
+#Collects all SETUID binaries and compares them to the list above. Discards entries not included in the list. 
 
 if 'SUDO_UID' in os.environ.keys():
     suids = subprocess.run(["find","/usr/bin","/usr/sbin","/opt", "/home/","-type","f","-perm","-4000"], stdout=subprocess.PIPE,text=True)
