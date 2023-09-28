@@ -27,6 +27,9 @@ def get_setuids():
         red("Script requires sudo permissions...Aborting")
         exit()
 
+#Prints all found SUID binaries.
+#Has user select an individual binary or all binaries.
+#Changes permissions of chosen bin(s)
 def main():
     counter = 1 
     suids = get_setuids()
