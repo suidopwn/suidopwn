@@ -1,3 +1,11 @@
+  _____ _    _ _____ _____   ____  _______          ___   _ 
+ / ____| |  | |_   _|  __ \ / __ \|  __ \ \        / / \ | |
+| (___ | |  | | | | | |  | | |  | | |__) \ \  /\  / /|  \| |
+ \___ \| |  | | | | | |  | | |  | |  ___/ \ \/  \/ / | .   |
+ ____) | |__| |_| |_| |__| | |__| | |      \  /\  /  | |\  |
+|_____/ \____/|_____|_____/ \____/|_|       \/  \/   |_| \_|
+By the Hashslinging Bashers
+
 SUIDOPWN is a toolset written in Python. It focuses around vulnerable SETUID binaries on Unix systems. The suido/suido-shell.txt scripts automate SETUID privilege escalation techniques.
 
 Suido is a full function script which includes a binary scanner and a search functionality. 
